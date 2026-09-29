@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
+import '../services/auth_service.dart';
 import '../services/book_api_service.dart';
 import '../widgets/book_card.dart';
+import 'book_details_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -26,7 +28,33 @@ class _SearchScreenState extends State<SearchScreen> {
     _focusNode.unfocus();
     context.read<BookProvider>().search(text, type: type);
   }
+Future<void> _logout() async {
+  final shouldLogout = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Logout'),
+        content: const Text(
+          'Are you sure you want to logout?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      );
+    },
+  );
 
+  if (shouldLogout != true) return;
+
+  await AuthService().logout();
+}
   String _hint(SearchType type) {
     switch (type) {
       case SearchType.title:
@@ -42,7 +70,16 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final p = context.watch<BookProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Book Details App')),
+      appBar: AppBar(
+  title: const Text('Book Details App'),
+  actions: [
+    IconButton(
+      tooltip: 'Logout',
+      icon: const Icon(Icons.logout),
+      onPressed: _logout,
+    ),
+  ],
+),
       body: Column(
         children: [
           Padding(
@@ -248,8 +285,15 @@ class _SearchScreenState extends State<SearchScreen> {
         return BookCard(
           book: p.books[i - 1],
           onTap: () {
-            // Step 5 opens the details screen here
-          },
+            Navigator.push(
+              context,
+                MaterialPageRoute(
+                  builder: (_) => BookDetailsScreen(
+                    book: p.books[i - 1],
+                  ),
+                ),
+             );
+            },
         );
       },
     );
