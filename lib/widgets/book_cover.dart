@@ -29,7 +29,7 @@ class BookCover extends StatelessWidget {
       child: url == null
           ? _placeholder(context) : CachedNetworkImage(
               imageUrl: url!, width: width, height: height, fit: BoxFit.cover, placeholder: (c, _) => _placeholder(c, loading: true),
-              errorWidget: (c, _, __) => _placeholder(c),
+              errorWidget: (c, _, _) => _placeholder(c),
             ),
     );
   }
