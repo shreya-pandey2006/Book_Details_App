@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
-
 import '../models/book.dart';
 import '../models/search_result.dart';
 
@@ -11,7 +9,6 @@ enum SearchType { all, title, author }
 class ApiException implements Exception {
   final String message;
   ApiException(this.message);
-
   @override
   String toString() => message;
 }
@@ -26,8 +23,7 @@ class BookApiService {
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
-        throw ApiException(
-            'Server error (${response.statusCode}). Please try again.');
+        throw ApiException('Server error (${response.statusCode}). Please try again.');
       }
       return jsonDecode(response.body) as Map<String, dynamic>;
     } on ApiException {
@@ -38,8 +34,6 @@ class BookApiService {
       throw ApiException('Could not load data. Check your internet connection.');
     }
   }
-
-  /// search.json?q=...  or ?title=...  or ?author=...  (+ page, sort, language)
   Future<SearchResult> search(
     String query, {
     SearchType type = SearchType.all,
@@ -76,8 +70,6 @@ class BookApiService {
       total: data['numFound'] as int? ?? 0,
     );
   }
-
-  /// /subjects/love.json  (used for category browsing)
   Future<SearchResult> getSubject(
     String subject, {
     int page = 1,
@@ -96,8 +88,6 @@ class BookApiService {
       total: data['work_count'] as int? ?? 0,
     );
   }
-
-  /// /works/OL45804W.json  -> description text (used on the details screen)
   Future<String?> getDescription(String workKey) async {
     final data = await _getJson(Uri.https(_host, '$workKey.json'));
     final d = data['description'];

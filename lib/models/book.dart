@@ -6,7 +6,7 @@ List<String> _stringList(dynamic value, {int max = 10}) {
 }
 
 class Book {
-  final String key; // e.g. /works/OL45804W
+  final String key;
   final String title;
   final List<String> authors;
   final int? firstPublishYear;
@@ -30,7 +30,6 @@ class Book {
     this.languages = const [],
   });
 
-  /// Build a Book from one item of search.json -> "docs"
   factory Book.fromSearchJson(Map<String, dynamic> json) {
     final isbns = _stringList(json['isbn'], max: 1);
     return Book(
@@ -47,7 +46,6 @@ class Book {
     );
   }
 
-  /// Build a Book from one item of /subjects/xxx.json -> "works"
   factory Book.fromSubjectJson(Map<String, dynamic> json) {
     final authorList = json['authors'];
     return Book(
@@ -61,8 +59,7 @@ class Book {
       subjects: _stringList(json['subject']),
     );
   }
-
-  /// Cover image address. size: 'S', 'M' or 'L'. Returns null if no cover.
+  
   String? coverUrl({String size = 'L'}) {
     if (coverId != null) {
       return 'https://covers.openlibrary.org/b/id/$coverId-$size.jpg';
