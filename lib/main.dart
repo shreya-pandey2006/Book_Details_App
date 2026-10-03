@@ -5,7 +5,6 @@ import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/search_screen.dart';
 import 'services/auth_service.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -14,7 +13,6 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -28,12 +26,8 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-/// Shows the login screen or the app depending on Firebase's sign-in state.
-/// StreamBuilder rebuilds on its own, so no state-management package is needed.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(

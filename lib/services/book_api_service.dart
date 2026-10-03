@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/book.dart';
 import '../models/search_result.dart';
-
 enum SearchType { all, title, author }
 
 class ApiException implements Exception {
@@ -18,7 +17,6 @@ class BookApiService {
   static const _fields =
       'key,title,author_name,first_publish_year,cover_i,isbn,subject,'
       'publisher,number_of_pages_median,language';
-
   Future<Map<String, dynamic>> _getJson(Uri uri) async {
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 15));

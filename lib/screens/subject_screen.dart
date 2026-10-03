@@ -3,12 +3,9 @@ import '../models/book.dart';
 import '../services/book_api_service.dart';
 import '../widgets/book_card.dart';
 import 'book_details_screen.dart';
-
-/// Lists the books of one subject / category, e.g. "Fantasy".
 class SubjectScreen extends StatefulWidget {
   final String subject;
   const SubjectScreen({super.key, required this.subject});
-
   @override
   State<SubjectScreen> createState() => _SubjectScreenState();
 }
@@ -16,7 +13,6 @@ class SubjectScreen extends StatefulWidget {
 class _SubjectScreenState extends State<SubjectScreen> {
   static const _pageSize = 20;
   final _api = BookApiService();
-
   List<Book> _books = [];
   int _total = 0;
   int _page = 1;
@@ -24,9 +20,7 @@ class _SubjectScreenState extends State<SubjectScreen> {
   bool _loadingMore = false;
   String? _error;
   String? _loadMoreError;
-
   bool get _hasMore => _books.length < _total;
-
   @override
   void initState() {
     super.initState();
@@ -107,8 +101,7 @@ class _SubjectScreenState extends State<SubjectScreen> {
               const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
               const SizedBox(height: 12),
               Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton(onPressed: _load, child: const Text('Retry')),
+              const SizedBox(height: 16), FilledButton(onPressed: _load, child: const Text('Retry')),
             ],
           ),
         ),
@@ -118,16 +111,13 @@ class _SubjectScreenState extends State<SubjectScreen> {
       return const Center(child: Text('No books found for this subject.'));
     }
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 16),
-      itemCount: _books.length + 1,
+      padding: const EdgeInsets.only(top: 8, bottom: 16), itemCount: _books.length + 1,
       itemBuilder: (context, i) {
         if (i == _books.length) return _buildFooter();
         final book = _books[i];
         return BookCard(
           book: book,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => BookDetailsScreen(book: book)),
+          onTap: () => Navigator.push( context, MaterialPageRoute(builder: (_) => BookDetailsScreen(book: book)),
           ),
         );
       },
@@ -137,8 +127,7 @@ class _SubjectScreenState extends State<SubjectScreen> {
   Widget _buildFooter() {
     if (_loadingMore) {
       return const Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()),
       );
     }
     if (_loadMoreError != null) {
@@ -146,8 +135,7 @@ class _SubjectScreenState extends State<SubjectScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(_loadMoreError!),
-            TextButton(onPressed: _loadMore, child: const Text('Try again')),
+            Text(_loadMoreError!), TextButton(onPressed: _loadMore, child: const Text('Try again')),
           ],
         ),
       );
@@ -157,16 +145,13 @@ class _SubjectScreenState extends State<SubjectScreen> {
         padding: const EdgeInsets.all(16),
         child: Center(
           child: OutlinedButton.icon(
-            onPressed: _loadMore,
-            icon: const Icon(Icons.expand_more),
-            label: const Text('Load more'),
+            onPressed: _loadMore, icon: const Icon(Icons.expand_more), label: const Text('Load more'),
           ),
         ),
       );
     }
     return const Padding(
-      padding: EdgeInsets.all(16),
-      child: Center(child: Text('You have reached the end.')),
+      padding: EdgeInsets.all(16), child: Center(child: Text('You have reached the end.')),
     );
   }
 }

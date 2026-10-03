@@ -1,15 +1,45 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  /// Emits the signed-in user, or null when signed out.
   Stream<User?> get authChanges => _auth.authStateChanges();
-
   User? get currentUser => _auth.currentUser;
 
-  /// Returns null on success, or a short message to show the user.
+  Future<String?> signInWithEmail(String email, String password) async {
+    try {
+      await _auth.signInWithEmailAndPassword(
+          email: email.trim(), password: password);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _message(e);
+    } catch (_) {
+      return 'Something went wrong. Please try again.';
+    }
+  }
+
+  Future<String?> signUpWithEmail(String email, String password) async {
+    try {
+      await _auth.createUserWithEmailAndPassword(
+          email: email.trim(), password: password);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _message(e);
+    } catch (_) {
+      return 'Something went wrong. Please try again.';
+    }
+  }
+
+  Future<String?> sendPasswordReset(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _message(e);
+    } catch (_) {
+      return 'Something went wrong. Please try again.';
+    }
+  }
+
   Future<String?> signInWithGoogle() async {
     try {
       final provider = GoogleAuthProvider();
@@ -24,13 +54,33 @@ class AuthService {
           e.code == 'canceled' ||
           e.code == 'cancelled-popup-request' ||
           e.code == 'web-context-canceled') {
-        return null; // user simply closed the window
+        return null;
       }
-      return e.message ?? 'Sign-in failed. Please try again.';
+      return _message(e);
     } catch (_) {
       return 'Sign-in failed. Check your internet connection.';
     }
   }
-
   Future<void> signOut() => _auth.signOut();
+
+  String _message(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-email':
+        return 'That email address is not valid.';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Incorrect email or password.';
+      case 'email-already-in-use':
+        return 'An account already exists for this email. Try signing in.';
+      case 'weak-password':
+        return 'Password is too weak. Use at least 6 characters.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a bit and try again.';
+      case 'network-request-failed':
+        return 'No internet connection.';
+      default:
+        return e.message ?? 'Sign-in failed. Please try again.';
+    }
+  }
 }

@@ -3,18 +3,16 @@ import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/book_api_service.dart';
 import '../widgets/book_card.dart';
+import '../services/auth_service.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
-
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
   static const _pageSize = 20;
-
-  // API value -> label shown to the user
   static const _sortOptions = {
     '': 'Relevance',
     'new': 'Newest first',
@@ -34,8 +32,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final _api = BookApiService();
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
-
-  // ---- screen state (plain setState, no state-management package) ----
   List<Book> _books = [];
   List<Book> _suggestions = [];
   bool _isLoading = false;
@@ -46,17 +42,13 @@ class _SearchScreenState extends State<SearchScreen> {
   String _query = '';
   int _total = 0;
   int _page = 1;
-
   SearchType _searchType = SearchType.all;
   String _sort = '';
   String _language = '';
-
   Timer? _debounce;
   int _searchId = 0;
   int _suggestionId = 0;
-
   bool get _hasMore => _books.length < _total;
-
   @override
   void dispose() {
     _debounce?.cancel();
@@ -65,9 +57,8 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  // ---------------- suggestions ----------------
   void _onQueryChanged(String text) {
-    setState(() {}); // refreshes the clear (x) button
+    setState(() {});
     _debounce?.cancel();
     final q = text.trim();
     if (q.length < 2) {
@@ -117,11 +108,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final result = await _api.search(
         q,
-        type: _searchType,
-        page: 1,
-        limit: _pageSize,
-        sort: _sort,
-        language: _language,
+        type: _searchType, page: 1, limit: _pageSize, sort: _sort, language: _language,
       );
       if (!mounted || id != _searchId) return;
       _books = result.books;
@@ -151,15 +138,11 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final result = await _api.search(
         _query,
-        type: _searchType,
-        page: _page + 1,
-        limit: _pageSize,
-        sort: _sort,
-        language: _language,
+        type: _searchType, page: _page + 1, limit: _pageSize, sort: _sort, language: _language,
       );
       if (!mounted || id != _searchId) return;
       if (result.books.isEmpty) {
-        _total = _books.length; // nothing more to load
+        _total = _books.length;
       } else {
         _books = [..._books, ...result.books];
         _page++;
@@ -174,7 +157,6 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() => _isLoadingMore = false);
   }
 
-  // Re-run the current search when a filter changes.
   void _refreshIfSearched() {
     if (_hasSearched && _query.isNotEmpty) {
       _search(_query);
@@ -182,7 +164,6 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {});
     }
   }
-
   String _hint() {
     switch (_searchType) {
       case SearchType.title:
@@ -193,28 +174,25 @@ class _SearchScreenState extends State<SearchScreen> {
         return 'Search books, e.g. Harry Potter';
     }
   }
-
-  // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Book Details App')),
+      appBar: AppBar( title: const Text('Book Details App'),
+  actions: [
+    IconButton( icon: const Icon(Icons.logout), tooltip: 'Sign out', onPressed: () => AuthService().signOut(),
+    ),
+  ],
+),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              textInputAction: TextInputAction.search,
-              onChanged: _onQueryChanged,
-              onSubmitted: _search,
+              controller: _controller, focusNode: _focusNode, textInputAction: TextInputAction.search,
+              onChanged: _onQueryChanged, onSubmitted: _search,
               decoration: InputDecoration(
                 hintText: _hint(),
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _controller.text.isEmpty
-                    ? null
-                    : IconButton(
+                prefixIcon: const Icon(Icons.search), suffixIcon: _controller.text.isEmpty ? null : IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _controller.clear();
@@ -222,9 +200,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         },
                       ),
                 filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
+                border: OutlineInputBorder( borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none,
                 ),
               ),
             ),
@@ -236,10 +212,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 _buildBody(),
                 if (_suggestions.isNotEmpty)
                   Positioned(
-                    top: 0,
-                    left: 16,
-                    right: 16,
-                    child: _buildSuggestions(),
+                    top: 0, left: 16, right: 16, child: _buildSuggestions(),
                   ),
               ],
             ),
@@ -254,8 +227,7 @@ class _SearchScreenState extends State<SearchScreen> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Column(
         children: [
-          SizedBox(
-            width: double.infinity,
+          SizedBox( width: double.infinity,
             child: SegmentedButton<SearchType>(
               segments: const [
                 ButtonSegment(value: SearchType.all, label: Text('All')),
@@ -274,9 +246,7 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               Expanded(
                 child: _dropdown(
-                  value: _sort,
-                  items: _sortOptions,
-                  icon: Icons.sort,
+                   value: _sort, items: _sortOptions, icon: Icons.sort,
                   onChanged: (v) {
                     _sort = v;
                     _refreshIfSearched();
@@ -286,9 +256,7 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _dropdown(
-                  value: _language,
-                  items: _languageOptions,
-                  icon: Icons.language,
+                  value: _language, items: _languageOptions, icon: Icons.language,
                   onChanged: (v) {
                     _language = v;
                     _refreshIfSearched();
@@ -310,17 +278,13 @@ class _SearchScreenState extends State<SearchScreen> {
   }) {
     return InputDecorator(
       decoration: InputDecoration(
-        isDense: true,
-        prefixIcon: Icon(icon, size: 20),
+        isDense: true, prefixIcon: Icon(icon, size: 20),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          isDense: true,
-          items: items.entries
+          value: value, isExpanded: true, isDense: true, items: items.entries
               .map((e) => DropdownMenuItem(
                     value: e.key,
                     child: Text(e.value, overflow: TextOverflow.ellipsis),
@@ -336,22 +300,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSuggestions() {
     return Material(
-      elevation: 6,
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias,
+      elevation: 6, borderRadius: BorderRadius.circular(12), clipBehavior: Clip.antiAlias,
       child: ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: _suggestions.length,
+        shrinkWrap: true, padding: EdgeInsets.zero, physics: const NeverScrollableScrollPhysics(), itemCount: _suggestions.length,
         itemBuilder: (context, i) {
           final book = _suggestions[i];
           return ListTile(
-            dense: true,
-            leading: const Icon(Icons.menu_book_outlined),
+            dense: true, leading: const Icon(Icons.menu_book_outlined),
             title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text(book.authorsText,
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text(book.authorsText, maxLines: 1, overflow: TextOverflow.ellipsis),
             onTap: () {
               _controller.text = book.title;
               _search(book.title, type: SearchType.title);
@@ -368,31 +325,23 @@ class _SearchScreenState extends State<SearchScreen> {
     }
     if (_error != null) {
       return _MessageView(
-        icon: Icons.wifi_off,
-        title: 'Something went wrong',
-        message: _error!,
-        buttonLabel: 'Retry',
+        icon: Icons.wifi_off, title: 'Something went wrong', message: _error!, buttonLabel: 'Retry',
         onPressed: () => _search(_query),
       );
     }
     if (!_hasSearched) {
       return const _MessageView(
-        icon: Icons.menu_book,
-        title: 'Find your next book',
-        message: 'Search by title, author or keyword.',
+        icon: Icons.menu_book, title: 'Find your next book', message: 'Search by title, author or keyword.',
       );
     }
     if (_books.isEmpty) {
       return _MessageView(
-        icon: Icons.search_off,
-        title: 'No books found',
-        message: 'Nothing matched "$_query". Try a different search or filter.',
+        icon: Icons.search_off, title: 'No books found', message: 'Nothing matched "$_query". Try a different search or filter.',
       );
     }
-    // item 0 = result count, last item = Load more footer
+
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 16),
-      itemCount: _books.length + 2,
+      padding: const EdgeInsets.only(bottom: 16), itemCount: _books.length + 2, 
       itemBuilder: (context, i) {
         if (i == 0) {
           return Padding(
@@ -404,7 +353,6 @@ class _SearchScreenState extends State<SearchScreen> {
         return BookCard(
           book: _books[i - 1],
           onTap: () {
-            // Step 5 opens the details screen here
           },
         );
       },
@@ -414,8 +362,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildFooter() {
     if (_isLoadingMore) {
       return const Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()),
       );
     }
     if (_loadMoreError != null) {
@@ -423,8 +370,7 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(_loadMoreError!),
-            TextButton(onPressed: _loadMore, child: const Text('Try again')),
+            Text(_loadMoreError!), TextButton(onPressed: _loadMore, child: const Text('Try again')),
           ],
         ),
       );
@@ -434,16 +380,13 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.all(16),
         child: Center(
           child: OutlinedButton.icon(
-            onPressed: _loadMore,
-            icon: const Icon(Icons.expand_more),
-            label: const Text('Load more'),
+            onPressed: _loadMore, icon: const Icon(Icons.expand_more), label: const Text('Load more'),
           ),
         ),
       );
     }
     return const Padding(
-      padding: EdgeInsets.all(16),
-      child: Center(child: Text('You have reached the end.')),
+      padding: EdgeInsets.all(16), child: Center(child: Text('You have reached the end.')),
     );
   }
 }
@@ -454,7 +397,6 @@ class _MessageView extends StatelessWidget {
   final String message;
   final String? buttonLabel;
   final VoidCallback? onPressed;
-
   const _MessageView({
     required this.icon,
     required this.title,
@@ -462,7 +404,6 @@ class _MessageView extends StatelessWidget {
     this.buttonLabel,
     this.onPressed,
   });
-
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -477,8 +418,7 @@ class _MessageView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(message, textAlign: TextAlign.center),
             if (buttonLabel != null) ...[
-              const SizedBox(height: 16),
-              FilledButton(onPressed: onPressed, child: Text(buttonLabel!)),
+              const SizedBox(height: 16), FilledButton(onPressed: onPressed, child: Text(buttonLabel!)),
             ],
           ],
         ),

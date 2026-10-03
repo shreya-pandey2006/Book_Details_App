@@ -1,17 +1,32 @@
-# task2
+# Book Details App
 
-A new Flutter project.
+A simple Flutter app to search books using the free [Open Library API](https://openlibrary.org/developers/api).
+Users sign in with Firebase Authentication (email/password or Google).
 
-## Getting Started
+No state management package is used. The app uses only `StatefulWidget` and `setState`.
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+- Sign up, sign in and sign out (email/password and Google)
+- Search books by keyword, title or author
+- Suggestions while typing
+- Sort results and filter by language
+- Load more results
+- Loading, empty and error messages
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Tech used
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Flutter (Dart)
+- Open Library API (`http`)
+- Firebase Authentication
+
+## How to run
+
+```bash
+flutter pub get
+flutter run -d chrome
+```
+
+## Author
+
+Shreya Pandey
