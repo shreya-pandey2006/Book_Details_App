@@ -5,23 +5,19 @@ import '../widgets/book_cover.dart';
 
 class BookDetailsScreen extends StatefulWidget {
   final Book book;
-
   const BookDetailsScreen({
     super.key,
     required this.book,
   });
-
   @override
   State<BookDetailsScreen> createState() => _BookDetailsScreenState();
 }
 
 class _BookDetailsScreenState extends State<BookDetailsScreen> {
   final BookApiService _api = BookApiService();
-
   String? _description;
   bool _isLoadingDescription = true;
   String? _descriptionError;
-
   @override
   void initState() {
     super.initState();
@@ -31,9 +27,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   Future<void> _loadDescription() async {
     try {
       final description = await _api.getDescription(widget.book.key);
-
       if (!mounted) return;
-
       setState(() {
         _description = description;
         _isLoadingDescription = false;
@@ -69,7 +63,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cover + basic information
             Center(
               child: BookCover(
                 url: book.coverUrl(size: 'L'),
@@ -77,7 +70,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 height: 270,
               ),
             ),
-
             const SizedBox(height: 24),
 
             Text(
@@ -95,10 +87,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ),
 
             const SizedBox(height: 20),
-
-            // Publication information
             _sectionTitle(context, 'Publication Details'),
-
             const SizedBox(height: 10),
 
             _infoRow(
@@ -142,25 +131,18 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               ),
 
             const SizedBox(height: 24),
-
-            // Description
             _sectionTitle(context, 'Description'),
-
             const SizedBox(height: 10),
-
             _buildDescription(context),
 
             const SizedBox(height: 24),
-
-            // Subjects
             if (book.subjects.isNotEmpty) ...[
               _sectionTitle(context, 'Subjects'),
 
               const SizedBox(height: 10),
 
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 8,runSpacing: 8,
                 children: book.subjects.take(15).map((subject) {
                   return Chip(
                     label: Text(subject),
@@ -196,14 +178,12 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     }
 
     if (_description == null || _description!.trim().isEmpty) {
-      return Text(
-        'No description available for this book.',
+      return Text('No description available for this book.',
         style: Theme.of(context).textTheme.bodyLarge,
       );
     }
 
-    return Text(
-      _description!,
+    return Text(_description!,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
         height: 1.5,
       ),
@@ -211,8 +191,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Widget _sectionTitle(BuildContext context, String title) {
-    return Text(
-      title,
+    return Text(title,
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.bold,
       ),
@@ -231,17 +210,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            icon,
-            size: 20,
-            color: Theme.of(context).colorScheme.primary,
+            icon, size: 20, color: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(width: 12),
           SizedBox(
             width: 110,
             child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
+              label, style: const TextStyle(fontWeight: FontWeight.w600,
               ),
             ),
           ),

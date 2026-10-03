@@ -1,12 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import '../services/auth_service.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -15,7 +13,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
   final AuthService _authService = AuthService();
 
   bool _isLoading = false;
@@ -90,9 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await _authService.signInWithGoogle();
-
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Google sign-in successful!'),
@@ -129,15 +124,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter your email';
     }
-
     final emailRegex = RegExp(
       r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
     );
-
     if (!emailRegex.hasMatch(value.trim())) {
       return 'Please enter a valid email';
     }
-
     return null;
   }
 
@@ -176,8 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    Text(
-                      'Welcome Back',
+                    Text('Welcome Back',
                       textAlign: TextAlign.center,
                       style: Theme.of(context)
                           .textTheme
@@ -211,7 +202,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
 
                     const SizedBox(height: 16),
-
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -237,7 +227,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 24),
 
                     SizedBox(
@@ -257,13 +246,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
 
                     const SizedBox(height: 16),
-
                     OutlinedButton.icon(
                       onPressed:
                           _isLoading ? null : _signInWithGoogle,
                       icon: const Icon(Icons.account_circle),
-                      label: const Text(
-                        'Continue with Google',
+                      label: const Text('Continue with Google',
                       ),
                     ),
 

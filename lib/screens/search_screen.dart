@@ -133,8 +133,6 @@ Future<void> _logout() async {
       ),
     );
   }
-
-  // ---------- Step 4: search-by, sort, language ----------
   Widget _buildFilters(BookProvider p) {
     final provider = context.read<BookProvider>();
     return Padding(
@@ -268,7 +266,6 @@ Future<void> _logout() async {
         message: 'Nothing matched "${p.query}". Try a different search or filter.',
       );
     }
-    // item 0 = result count, last item = Load more footer
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: p.books.length + 2,

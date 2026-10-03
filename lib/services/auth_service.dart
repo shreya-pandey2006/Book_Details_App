@@ -2,9 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-
   Future<User?> register({
     required String email,
     required String password,
@@ -13,7 +11,6 @@ class AuthService {
       email: email.trim(),
       password: password,
     );
-
     return credential.user;
   }
 
@@ -25,16 +22,13 @@ class AuthService {
       email: email.trim(),
       password: password,
     );
-
     return credential.user;
   }
 
   Future<User?> signInWithGoogle() async {
     final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-
     final UserCredential credential =
         await _auth.signInWithPopup(googleProvider);
-
     return credential.user;
   }
 

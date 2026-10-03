@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-/// Grey placeholder cards with a shimmer effect, shown while books load.
 class BookListSkeleton extends StatelessWidget {
   final int count;
   const BookListSkeleton({super.key, this.count = 6});
-
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
