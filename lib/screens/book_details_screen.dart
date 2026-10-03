@@ -5,19 +5,20 @@ import '../widgets/book_cover.dart';
 
 class BookDetailsScreen extends StatefulWidget {
   final Book book;
-  const BookDetailsScreen({
-    super.key,
-    required this.book,
-  });
+  const BookDetailsScreen({super.key, required this.book});
+
   @override
   State<BookDetailsScreen> createState() => _BookDetailsScreenState();
 }
 
 class _BookDetailsScreenState extends State<BookDetailsScreen> {
-  final BookApiService _api = BookApiService();
+  final _api = BookApiService();
+
+  bool _loadingDescription = true;
   String? _description;
-  bool _isLoadingDescription = true;
   String? _descriptionError;
+  bool _expanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -25,206 +26,146 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Future<void> _loadDescription() async {
+    setState(() {
+      _loadingDescription = true;
+      _descriptionError = null;
+    });
     try {
-      final description = await _api.getDescription(widget.book.key);
+      final text = await _api.getDescription(widget.book.key);
       if (!mounted) return;
-      setState(() {
-        _description = description;
-        _isLoadingDescription = false;
-      });
+      setState(() => _description = text);
     } on ApiException catch (e) {
       if (!mounted) return;
-
-      setState(() {
-        _descriptionError = e.message;
-        _isLoadingDescription = false;
-      });
+      setState(() => _descriptionError = e.message);
     } catch (_) {
       if (!mounted) return;
-
-      setState(() {
-        _descriptionError = 'Could not load the description.';
-        _isLoadingDescription = false;
-      });
+      setState(() => _descriptionError = 'Could not load the description.');
     }
+    if (!mounted) return;
+    setState(() => _loadingDescription = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final book = widget.book;
-    final theme = Theme.of(context);
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Book Details'),
-      ),
+      appBar: AppBar(title: const Text('Book details')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: BookCover(
                 url: book.coverUrl(size: 'L'),
-                width: 180,
-                height: 270,
+                width: 160,
+                height: 230,
               ),
             ),
-            const SizedBox(height: 24),
-
-            Text(
-              book.title,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              book.authorsText,
-              style: theme.textTheme.titleMedium,
-            ),
-
-            const SizedBox(height: 20),
-            _sectionTitle(context, 'Publication Details'),
-            const SizedBox(height: 10),
-
-            _infoRow(
-              context,
-              Icons.calendar_today,
-              'First published',
-              book.firstPublishYear?.toString() ?? 'Unknown',
-            ),
-
-            _infoRow(
-              context,
-              Icons.business,
-              'Publisher',
-              book.publishers.isEmpty
-                  ? 'Unknown'
-                  : book.publishers.join(', '),
-            ),
-
-            _infoRow(
-              context,
-              Icons.menu_book,
-              'Pages',
-              book.pages?.toString() ?? 'Unknown',
-            ),
-
-            _infoRow(
-              context,
-              Icons.language,
-              'Language',
-              book.languages.isEmpty
-                  ? 'Unknown'
-                  : book.languages.join(', '),
-            ),
-
-            if (book.isbn != null)
-              _infoRow(
-                context,
-                Icons.numbers,
-                'ISBN',
-                book.isbn!,
-              ),
-
-            const SizedBox(height: 24),
-            _sectionTitle(context, 'Description'),
-            const SizedBox(height: 10),
-            _buildDescription(context),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            Text(book.title,
+                style: textTheme.headlineSmall, textAlign: TextAlign.center),
+            const SizedBox(height: 4),
+            Text(book.authorsText,
+                style: textTheme.titleMedium, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            _buildInfoCard(book),
             if (book.subjects.isNotEmpty) ...[
-              _sectionTitle(context, 'Subjects'),
-
-              const SizedBox(height: 10),
-
+              const SizedBox(height: 16),
+              Text('Subjects', style: textTheme.titleMedium),
+              const SizedBox(height: 8),
               Wrap(
-                spacing: 8,runSpacing: 8,
-                children: book.subjects.take(15).map((subject) {
-                  return Chip(
-                    label: Text(subject),
-                  );
-                }).toList(),
+                spacing: 8,
+                runSpacing: 4,
+                children: book.subjects.map((s) => Chip(label: Text(s))).toList(),
               ),
             ],
-
-            const SizedBox(height: 30),
+            const SizedBox(height: 16),
+            Text('Description', style: textTheme.titleMedium),
+            const SizedBox(height: 8),
+            _buildDescription(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDescription(BuildContext context) {
-    if (_isLoadingDescription) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: CircularProgressIndicator(),
+  Widget _buildInfoCard(Book book) {
+    final rows = <MapEntry<String, String>>[
+      if (book.firstPublishYear != null)
+        MapEntry('First published', '${book.firstPublishYear}'),
+      if (book.pages != null) MapEntry('Pages', '${book.pages}'),
+      if (book.publishers.isNotEmpty)
+        MapEntry('Publishers', book.publishers.join(', ')),
+      if (book.languages.isNotEmpty)
+        MapEntry('Languages',
+            book.languages.map((l) => l.toUpperCase()).join(', ')),
+      if (book.isbn != null) MapEntry('ISBN', book.isbn!),
+    ];
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: rows
+              .map((r) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 110,
+                          child: Text(r.key,
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                        Expanded(child: Text(r.value)),
+                      ],
+                    ),
+                  ))
+              .toList(),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDescription() {
+    if (_loadingDescription) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
-
     if (_descriptionError != null) {
-      return Text(
-        _descriptionError!,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
-
-    if (_description == null || _description!.trim().isEmpty) {
-      return Text('No description available for this book.',
-        style: Theme.of(context).textTheme.bodyLarge,
-      );
-    }
-
-    return Text(_description!,
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-        height: 1.5,
-      ),
-    );
-  }
-
-  Widget _sectionTitle(BuildContext context, String title) {
-    return Text(title,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  Widget _infoRow(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      return Row(
         children: [
-          Icon(
-            icon, size: 20, color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 110,
-            child: Text(
-              label, style: const TextStyle(fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(_descriptionError!)),
+          TextButton(onPressed: _loadDescription, child: const Text('Retry')),
         ],
-      ),
+      );
+    }
+    if (_description == null || _description!.trim().isEmpty) {
+      return const Text('No description available for this book.');
+    }
+    final text = _description!.trim();
+    final isLong = text.length > 300;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          text,
+          maxLines: _expanded || !isLong ? null : 6,
+          overflow: _expanded || !isLong ? null : TextOverflow.ellipsis,
+        ),
+        if (isLong)
+          TextButton(
+            onPressed: () => setState(() => _expanded = !_expanded),
+            child: Text(_expanded ? 'Show less' : 'Read more'),
+          ),
+      ],
     );
   }
 }

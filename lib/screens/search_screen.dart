@@ -1,10 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/book_provider.dart';
-import '../services/auth_service.dart';
+import '../models/book.dart';
 import '../services/book_api_service.dart';
 import '../widgets/book_card.dart';
-import 'book_details_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -14,49 +12,179 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  static const _pageSize = 20;
+
+  // API value -> label shown to the user
+  static const _sortOptions = {
+    '': 'Relevance',
+    'new': 'Newest first',
+    'old': 'Oldest first',
+    'rating': 'Top rated',
+    'editions': 'Most editions',
+  };
+  static const _languageOptions = {
+    '': 'Any language',
+    'eng': 'English',
+    'hin': 'Hindi',
+    'spa': 'Spanish',
+    'fre': 'French',
+    'ger': 'German',
+  };
+
+  final _api = BookApiService();
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
 
+  // ---- screen state (plain setState, no state-management package) ----
+  List<Book> _books = [];
+  List<Book> _suggestions = [];
+  bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasSearched = false;
+  String? _error;
+  String? _loadMoreError;
+  String _query = '';
+  int _total = 0;
+  int _page = 1;
+
+  SearchType _searchType = SearchType.all;
+  String _sort = '';
+  String _language = '';
+
+  Timer? _debounce;
+  int _searchId = 0;
+  int _suggestionId = 0;
+
+  bool get _hasMore => _books.length < _total;
+
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  void _submit(String text, {SearchType? type}) {
-    _focusNode.unfocus();
-    context.read<BookProvider>().search(text, type: type);
+  // ---------------- suggestions ----------------
+  void _onQueryChanged(String text) {
+    setState(() {}); // refreshes the clear (x) button
+    _debounce?.cancel();
+    final q = text.trim();
+    if (q.length < 2) {
+      _clearSuggestions();
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 400), () => _loadSuggestions(q));
   }
-Future<void> _logout() async {
-  final shouldLogout = await showDialog<bool>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Logout'),
-        content: const Text(
-          'Are you sure you want to logout?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
-          ),
-        ],
+
+  Future<void> _loadSuggestions(String q) async {
+    final id = ++_suggestionId;
+    List<Book> result;
+    try {
+      result = (await _api.search(q, limit: 5)).books;
+    } catch (_) {
+      result = [];
+    }
+    if (!mounted || id != _suggestionId) return;
+    setState(() => _suggestions = result);
+  }
+
+  void _clearSuggestions() {
+    _debounce?.cancel();
+    _suggestionId++;
+    if (_suggestions.isNotEmpty) setState(() => _suggestions = []);
+  }
+
+  // ---------------- search ----------------
+  Future<void> _search(String text, {SearchType? type}) async {
+    final q = text.trim();
+    if (q.isEmpty) return;
+    _focusNode.unfocus();
+    _clearSuggestions();
+
+    final id = ++_searchId;
+    setState(() {
+      if (type != null) _searchType = type;
+      _query = q;
+      _isLoading = true;
+      _isLoadingMore = false;
+      _hasSearched = true;
+      _error = null;
+      _loadMoreError = null;
+      _page = 1;
+    });
+
+    try {
+      final result = await _api.search(
+        q,
+        type: _searchType,
+        page: 1,
+        limit: _pageSize,
+        sort: _sort,
+        language: _language,
       );
-    },
-  );
+      if (!mounted || id != _searchId) return;
+      _books = result.books;
+      _total = result.total;
+    } on ApiException catch (e) {
+      if (!mounted || id != _searchId) return;
+      _error = e.message;
+      _books = [];
+      _total = 0;
+    } catch (_) {
+      if (!mounted || id != _searchId) return;
+      _error = 'Something went wrong. Please try again.';
+      _books = [];
+      _total = 0;
+    }
+    setState(() => _isLoading = false);
+  }
 
-  if (shouldLogout != true) return;
+  Future<void> _loadMore() async {
+    if (_isLoading || _isLoadingMore || !_hasMore) return;
+    final id = _searchId;
+    setState(() {
+      _isLoadingMore = true;
+      _loadMoreError = null;
+    });
 
-  await AuthService().logout();
-}
-  String _hint(SearchType type) {
-    switch (type) {
+    try {
+      final result = await _api.search(
+        _query,
+        type: _searchType,
+        page: _page + 1,
+        limit: _pageSize,
+        sort: _sort,
+        language: _language,
+      );
+      if (!mounted || id != _searchId) return;
+      if (result.books.isEmpty) {
+        _total = _books.length; // nothing more to load
+      } else {
+        _books = [..._books, ...result.books];
+        _page++;
+      }
+    } on ApiException catch (e) {
+      if (!mounted || id != _searchId) return;
+      _loadMoreError = e.message;
+    } catch (_) {
+      if (!mounted || id != _searchId) return;
+      _loadMoreError = 'Could not load more books.';
+    }
+    setState(() => _isLoadingMore = false);
+  }
+
+  // Re-run the current search when a filter changes.
+  void _refreshIfSearched() {
+    if (_hasSearched && _query.isNotEmpty) {
+      _search(_query);
+    } else {
+      setState(() {});
+    }
+  }
+
+  String _hint() {
+    switch (_searchType) {
       case SearchType.title:
         return 'Book title, e.g. The Hobbit';
       case SearchType.author:
@@ -66,20 +194,11 @@ Future<void> _logout() async {
     }
   }
 
+  // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<BookProvider>();
     return Scaffold(
-      appBar: AppBar(
-  title: const Text('Book Details App'),
-  actions: [
-    IconButton(
-      tooltip: 'Logout',
-      icon: const Icon(Icons.logout),
-      onPressed: _logout,
-    ),
-  ],
-),
+      appBar: AppBar(title: const Text('Book Details App')),
       body: Column(
         children: [
           Padding(
@@ -88,13 +207,10 @@ Future<void> _logout() async {
               controller: _controller,
               focusNode: _focusNode,
               textInputAction: TextInputAction.search,
-              onChanged: (value) {
-                setState(() {});
-                context.read<BookProvider>().onQueryChanged(value);
-              },
-              onSubmitted: _submit,
+              onChanged: _onQueryChanged,
+              onSubmitted: _search,
               decoration: InputDecoration(
-                hintText: _hint(p.searchType),
+                hintText: _hint(),
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _controller.text.isEmpty
                     ? null
@@ -102,8 +218,7 @@ Future<void> _logout() async {
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _controller.clear();
-                          context.read<BookProvider>().onQueryChanged('');
-                          setState(() {});
+                          _onQueryChanged('');
                         },
                       ),
                 filled: true,
@@ -114,17 +229,17 @@ Future<void> _logout() async {
               ),
             ),
           ),
-          _buildFilters(p),
+          _buildFilters(),
           Expanded(
             child: Stack(
               children: [
-                _buildBody(p),
-                if (p.suggestions.isNotEmpty)
+                _buildBody(),
+                if (_suggestions.isNotEmpty)
                   Positioned(
                     top: 0,
                     left: 16,
                     right: 16,
-                    child: _buildSuggestions(p),
+                    child: _buildSuggestions(),
                   ),
               ],
             ),
@@ -133,8 +248,8 @@ Future<void> _logout() async {
       ),
     );
   }
-  Widget _buildFilters(BookProvider p) {
-    final provider = context.read<BookProvider>();
+
+  Widget _buildFilters() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Column(
@@ -147,8 +262,11 @@ Future<void> _logout() async {
                 ButtonSegment(value: SearchType.title, label: Text('Title')),
                 ButtonSegment(value: SearchType.author, label: Text('Author')),
               ],
-              selected: {p.searchType},
-              onSelectionChanged: (s) => provider.setSearchType(s.first),
+              selected: {_searchType},
+              onSelectionChanged: (s) {
+                _searchType = s.first;
+                _refreshIfSearched();
+              },
             ),
           ),
           const SizedBox(height: 8),
@@ -156,19 +274,25 @@ Future<void> _logout() async {
             children: [
               Expanded(
                 child: _dropdown(
-                  value: p.sort,
-                  items: BookProvider.sortOptions,
+                  value: _sort,
+                  items: _sortOptions,
                   icon: Icons.sort,
-                  onChanged: provider.setSort,
+                  onChanged: (v) {
+                    _sort = v;
+                    _refreshIfSearched();
+                  },
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _dropdown(
-                  value: p.language,
-                  items: BookProvider.languageOptions,
+                  value: _language,
+                  items: _languageOptions,
                   icon: Icons.language,
-                  onChanged: provider.setLanguage,
+                  onChanged: (v) {
+                    _language = v;
+                    _refreshIfSearched();
+                  },
                 ),
               ),
             ],
@@ -210,7 +334,7 @@ Future<void> _logout() async {
     );
   }
 
-  Widget _buildSuggestions(BookProvider p) {
+  Widget _buildSuggestions() {
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(12),
@@ -219,9 +343,9 @@ Future<void> _logout() async {
         shrinkWrap: true,
         padding: EdgeInsets.zero,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: p.suggestions.length,
+        itemCount: _suggestions.length,
         itemBuilder: (context, i) {
-          final book = p.suggestions[i];
+          final book = _suggestions[i];
           return ListTile(
             dense: true,
             leading: const Icon(Icons.menu_book_outlined),
@@ -230,8 +354,7 @@ Future<void> _logout() async {
                 maxLines: 1, overflow: TextOverflow.ellipsis),
             onTap: () {
               _controller.text = book.title;
-              setState(() {});
-              _submit(book.title, type: SearchType.title);
+              _search(book.title, type: SearchType.title);
             },
           );
         },
@@ -239,87 +362,79 @@ Future<void> _logout() async {
     );
   }
 
-  Widget _buildBody(BookProvider p) {
-    if (p.isLoading) {
+  Widget _buildBody() {
+    if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (p.error != null) {
+    if (_error != null) {
       return _MessageView(
         icon: Icons.wifi_off,
         title: 'Something went wrong',
-        message: p.error!,
+        message: _error!,
         buttonLabel: 'Retry',
-        onPressed: () => p.search(p.query),
+        onPressed: () => _search(_query),
       );
     }
-    if (!p.hasSearched) {
+    if (!_hasSearched) {
       return const _MessageView(
         icon: Icons.menu_book,
         title: 'Find your next book',
         message: 'Search by title, author or keyword.',
       );
     }
-    if (p.books.isEmpty) {
+    if (_books.isEmpty) {
       return _MessageView(
         icon: Icons.search_off,
         title: 'No books found',
-        message: 'Nothing matched "${p.query}". Try a different search or filter.',
+        message: 'Nothing matched "$_query". Try a different search or filter.',
       );
     }
+    // item 0 = result count, last item = Load more footer
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 16),
-      itemCount: p.books.length + 2,
+      itemCount: _books.length + 2,
       itemBuilder: (context, i) {
         if (i == 0) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: Text('${p.total} results for "${p.query}"'),
+            child: Text('$_total results for "$_query"'),
           );
         }
-        if (i == p.books.length + 1) {
-          return _buildFooter(p);
-        }
+        if (i == _books.length + 1) return _buildFooter();
         return BookCard(
-          book: p.books[i - 1],
+          book: _books[i - 1],
           onTap: () {
-            Navigator.push(
-              context,
-                MaterialPageRoute(
-                  builder: (_) => BookDetailsScreen(
-                    book: p.books[i - 1],
-                  ),
-                ),
-             );
-            },
+            // Step 5 opens the details screen here
+          },
         );
       },
     );
   }
 
-  Widget _buildFooter(BookProvider p) {
-    if (p.isLoadingMore) {
+  Widget _buildFooter() {
+    if (_isLoadingMore) {
       return const Padding(
         padding: EdgeInsets.all(16),
         child: Center(child: CircularProgressIndicator()),
       );
     }
-    if (p.loadMoreError != null) {
+    if (_loadMoreError != null) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(p.loadMoreError!),
-            TextButton(onPressed: p.loadMore, child: const Text('Try again')),
+            Text(_loadMoreError!),
+            TextButton(onPressed: _loadMore, child: const Text('Try again')),
           ],
         ),
       );
     }
-    if (p.hasMore) {
+    if (_hasMore) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Center(
           child: OutlinedButton.icon(
-            onPressed: p.loadMore,
+            onPressed: _loadMore,
             icon: const Icon(Icons.expand_more),
             label: const Text('Load more'),
           ),

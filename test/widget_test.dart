@@ -1,30 +1,48 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:task2/main.dart';
+import 'package:task2/models/book.dart';
+import 'package:task2/widgets/book_card.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('Book.fromSearchJson reads the main fields', () {
+    final book = Book.fromSearchJson({
+      'key': '/works/OL1W',
+      'title': 'Test Book',
+      'author_name': ['Jane Doe'],
+      'first_publish_year': 1999,
+      'cover_i': 123,
+      'subject': ['Fantasy', 'Magic'],
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(book.title, 'Test Book');
+    expect(book.authorsText, 'Jane Doe');
+    expect(book.firstPublishYear, 1999);
+    expect(book.coverUrl(), 'https://covers.openlibrary.org/b/id/123-L.jpg');
+    expect(book.subjects, ['Fantasy', 'Magic']);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  test('Book falls back when data is missing', () {
+    final book = Book.fromSearchJson({'key': '/works/OL2W'});
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(book.title, 'Untitled');
+    expect(book.authorsText, 'Unknown author');
+    expect(book.coverUrl(), isNull);
+  });
+
+  testWidgets('BookCard shows title, author and year', (tester) async {
+    final book = Book(
+      key: '/works/OL1W',
+      title: 'Test Book',
+      authors: const ['Jane Doe'],
+      firstPublishYear: 1999,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: BookCard(book: book))),
+    );
+
+    expect(find.text('Test Book'), findsOneWidget);
+    expect(find.text('Jane Doe'), findsOneWidget);
+    expect(find.text('First published 1999'), findsOneWidget);
   });
 }

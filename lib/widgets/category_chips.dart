@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../screens/subject_screen.dart';
 
+/// Popular categories shown on the home screen before the first search.
 class CategoryChips extends StatelessWidget {
   const CategoryChips({super.key});
+
   static const categories = [
     'Fiction',
     'Fantasy',
@@ -24,7 +26,9 @@ class CategoryChips extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Wrap(
-            spacing: 8, runSpacing: 8, alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
             children: categories
                 .map((c) => ActionChip(
                       label: Text(c),

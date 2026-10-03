@@ -1,38 +1,36 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
-  Future<User?> register({
-    required String email,
-    required String password,
-  }) async {
-    final credential = await _auth.createUserWithEmailAndPassword(
-      email: email.trim(),
-      password: password,
-    );
-    return credential.user;
+
+  /// Emits the signed-in user, or null when signed out.
+  Stream<User?> get authChanges => _auth.authStateChanges();
+
+  User? get currentUser => _auth.currentUser;
+
+  /// Returns null on success, or a short message to show the user.
+  Future<String?> signInWithGoogle() async {
+    try {
+      final provider = GoogleAuthProvider();
+      if (kIsWeb) {
+        await _auth.signInWithPopup(provider);
+      } else {
+        await _auth.signInWithProvider(provider);
+      }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'popup-closed-by-user' ||
+          e.code == 'canceled' ||
+          e.code == 'cancelled-popup-request' ||
+          e.code == 'web-context-canceled') {
+        return null; // user simply closed the window
+      }
+      return e.message ?? 'Sign-in failed. Please try again.';
+    } catch (_) {
+      return 'Sign-in failed. Check your internet connection.';
+    }
   }
 
-  Future<User?> login({
-    required String email,
-    required String password,
-  }) async {
-    final credential = await _auth.signInWithEmailAndPassword(
-      email: email.trim(),
-      password: password,
-    );
-    return credential.user;
-  }
-
-  Future<User?> signInWithGoogle() async {
-    final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-    final UserCredential credential =
-        await _auth.signInWithPopup(googleProvider);
-    return credential.user;
-  }
-
-  Future<void> logout() async {
-    await _auth.signOut();
-  }
+  Future<void> signOut() => _auth.signOut();
 }

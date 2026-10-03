@@ -3,9 +3,12 @@ import '../models/book.dart';
 import '../services/book_api_service.dart';
 import '../widgets/book_card.dart';
 import 'book_details_screen.dart';
+
+/// Lists the books of one subject / category, e.g. "Fantasy".
 class SubjectScreen extends StatefulWidget {
   final String subject;
   const SubjectScreen({super.key, required this.subject});
+
   @override
   State<SubjectScreen> createState() => _SubjectScreenState();
 }
