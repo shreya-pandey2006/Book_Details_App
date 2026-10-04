@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-
-/// Grey placeholder cards with a shimmer effect, shown while books load.
 class BookListSkeleton extends StatelessWidget {
   final int count;
   const BookListSkeleton({super.key, this.count = 6});
-
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
@@ -15,20 +12,15 @@ class BookListSkeleton extends StatelessWidget {
       child: ListView.builder(
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.only(top: 8),
-        itemCount: count,
-        itemBuilder: (context, i) => _placeholderCard(),
+        itemCount: count, itemBuilder: (context, i) => _placeholderCard(),
       ),
     );
   }
 
   Widget _bar(double width, double height) {
     return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-      ),
+      width: width, height: height,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4),),
     );
   }
 
@@ -41,11 +33,8 @@ class BookListSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 70,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
+              width: 70,height: 100,decoration: BoxDecoration(
+                color: Colors.white,borderRadius: BorderRadius.circular(8),
               ),
             ),
             const SizedBox(width: 12),
@@ -57,7 +46,7 @@ class BookListSkeleton extends StatelessWidget {
                   const SizedBox(height: 10),
                   _bar(140, 12),
                   const SizedBox(height: 10),
-                  _bar(100, 12),
+                   _bar(100, 12),
                 ],
               ),
             ),

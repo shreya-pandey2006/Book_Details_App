@@ -2,18 +2,15 @@ import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/book_api_service.dart';
 import '../widgets/book_cover.dart';
-
 class BookDetailsScreen extends StatefulWidget {
   final Book book;
   const BookDetailsScreen({super.key, required this.book});
-
   @override
   State<BookDetailsScreen> createState() => _BookDetailsScreenState();
 }
 
 class _BookDetailsScreenState extends State<BookDetailsScreen> {
   final _api = BookApiService();
-
   bool _loadingDescription = true;
   String? _description;
   String? _descriptionError;
@@ -76,11 +73,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               const SizedBox(height: 16),
               Text('Subjects', style: textTheme.titleMedium),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: book.subjects.map((s) => Chip(label: Text(s))).toList(),
-              ),
+              Wrap(spacing: 8,runSpacing: 4, children: book.subjects.map((s) => Chip(label: Text(s))).toList(),),
             ],
             const SizedBox(height: 16),
             Text('Description', style: textTheme.titleMedium),

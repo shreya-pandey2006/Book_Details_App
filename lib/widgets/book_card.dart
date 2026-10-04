@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import 'book_cover.dart';
-
 class BookCard extends StatelessWidget {
   final Book book;
   final VoidCallback? onTap;

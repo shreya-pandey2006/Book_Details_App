@@ -5,7 +5,6 @@ class BookCover extends StatelessWidget {
   final String? url;
   final double width;
   final double height;
-
   const BookCover({
     super.key,
     required this.url,

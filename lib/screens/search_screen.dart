@@ -10,7 +10,6 @@ class SearchScreen extends StatefulWidget {
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
-
 class _SearchScreenState extends State<SearchScreen> {
   static const _pageSize = 20;
   static const _sortOptions = {
@@ -86,7 +85,6 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_suggestions.isNotEmpty) setState(() => _suggestions = []);
   }
 
-  // ---------------- search ----------------
   Future<void> _search(String text, {SearchType? type}) async {
     final q = text.trim();
     if (q.isEmpty) return;
@@ -192,8 +190,7 @@ class _SearchScreenState extends State<SearchScreen> {
               onChanged: _onQueryChanged, onSubmitted: _search,
               decoration: InputDecoration(
                 hintText: _hint(),
-                prefixIcon: const Icon(Icons.search), suffixIcon: _controller.text.isEmpty ? null : IconButton(
-                        icon: const Icon(Icons.clear),
+                prefixIcon: const Icon(Icons.search), suffixIcon: _controller.text.isEmpty ? null : IconButton( icon: const Icon(Icons.clear),
                         onPressed: () {
                           _controller.clear();
                           _onQueryChanged('');
@@ -230,12 +227,9 @@ class _SearchScreenState extends State<SearchScreen> {
           SizedBox( width: double.infinity,
             child: SegmentedButton<SearchType>(
               segments: const [
-                ButtonSegment(value: SearchType.all, label: Text('All')),
-                ButtonSegment(value: SearchType.title, label: Text('Title')),
-                ButtonSegment(value: SearchType.author, label: Text('Author')),
+                ButtonSegment(value: SearchType.all, label: Text('All')), ButtonSegment(value: SearchType.title, label: Text('Title')), ButtonSegment(value: SearchType.author, label: Text('Author')),
               ],
-              selected: {_searchType},
-              onSelectionChanged: (s) {
+              selected: {_searchType},  onSelectionChanged: (s) {
                 _searchType = s.first;
                 _refreshIfSearched();
               },
@@ -256,8 +250,7 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _dropdown(
-                  value: _language, items: _languageOptions, icon: Icons.language,
-                  onChanged: (v) {
+                  value: _language, items: _languageOptions, icon: Icons.language, onChanged: (v) {
                     _language = v;
                     _refreshIfSearched();
                   },
@@ -279,8 +272,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return InputDecorator(
       decoration: InputDecoration(
         isDense: true, prefixIcon: Icon(icon, size: 20),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
