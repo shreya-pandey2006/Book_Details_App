@@ -2,8 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/book_api_service.dart';
-import '../widgets/book_card.dart';
 import '../services/auth_service.dart';
+import '../widgets/book_card.dart';
+import '../widgets/category_chips.dart';
+import '../widgets/book_list_skeleton.dart';
+import 'book_details_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -12,22 +15,8 @@ class SearchScreen extends StatefulWidget {
 }
 class _SearchScreenState extends State<SearchScreen> {
   static const _pageSize = 20;
-  static const _sortOptions = {
-    '': 'Relevance',
-    'new': 'Newest first',
-    'old': 'Oldest first',
-    'rating': 'Top rated',
-    'editions': 'Most editions',
-  };
-  static const _languageOptions = {
-    '': 'Any language',
-    'eng': 'English',
-    'hin': 'Hindi',
-    'spa': 'Spanish',
-    'fre': 'French',
-    'ger': 'German',
-  };
-
+  static const _sortOptions = {'': 'Relevance','new': 'Newest first','old': 'Oldest first', 'rating': 'Top rated','editions': 'Most editions'};
+  static const _languageOptions = {'': 'Any language','eng': 'English','hin': 'Hindi', 'spa': 'Spanish','fre': 'French','ger': 'German'};
   final _api = BookApiService();
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
@@ -104,10 +93,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final result = await _api.search(
-        q,
-        type: _searchType, page: 1, limit: _pageSize, sort: _sort, language: _language,
-      );
+      final result = await _api.search( q, type: _searchType, page: 1, limit: _pageSize, sort: _sort, language: _language);
       if (!mounted || id != _searchId) return;
       _books = result.books;
       _total = result.total;
@@ -134,10 +120,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final result = await _api.search(
-        _query,
-        type: _searchType, page: _page + 1, limit: _pageSize, sort: _sort, language: _language,
-      );
+      final result = await _api.search(_query, type: _searchType, page: _page + 1, limit: _pageSize, sort: _sort, language: _language);
       if (!mounted || id != _searchId) return;
       if (result.books.isEmpty) {
         _total = _books.length;
@@ -192,12 +175,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 hintText: _hint(),
                 prefixIcon: const Icon(Icons.search), suffixIcon: _controller.text.isEmpty ? null : IconButton( icon: const Icon(Icons.clear),
                         onPressed: () {
-                          _controller.clear();
-                          _onQueryChanged('');
+                          _controller.clear(); _onQueryChanged('');
                         },
                       ),
-                filled: true,
-                border: OutlineInputBorder( borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none,
+                filled: true, border: OutlineInputBorder( borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none,
                 ),
               ),
             ),
@@ -208,9 +189,7 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 _buildBody(),
                 if (_suggestions.isNotEmpty)
-                  Positioned(
-                    top: 0, left: 16, right: 16, child: _buildSuggestions(),
-                  ),
+                  Positioned( top: 0, left: 16, right: 16, child: _buildSuggestions() ),
               ],
             ),
           ),
@@ -263,12 +242,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _dropdown({
-    required String value,
-    required Map<String, String> items,
-    required IconData icon,
-    required ValueChanged<String> onChanged,
-  }) {
+  Widget _dropdown({required String value, required Map<String, String> items, required IconData icon, required ValueChanged<String> onChanged,}) {
     return InputDecorator(
       decoration: InputDecoration(
         isDense: true, prefixIcon: Icon(icon, size: 20),
@@ -278,8 +252,7 @@ class _SearchScreenState extends State<SearchScreen> {
         child: DropdownButton<String>(
           value: value, isExpanded: true, isDense: true, items: items.entries
               .map((e) => DropdownMenuItem(
-                    value: e.key,
-                    child: Text(e.value, overflow: TextOverflow.ellipsis),
+                    value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis),
                   ))
               .toList(),
           onChanged: (v) {
@@ -312,9 +285,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_isLoading) return const BookListSkeleton();
     if (_error != null) {
       return _MessageView(
         icon: Icons.wifi_off, title: 'Something went wrong', message: _error!, buttonLabel: 'Retry',
@@ -322,10 +293,16 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
     if (!_hasSearched) {
-      return const _MessageView(
-        icon: Icons.menu_book, title: 'Find your next book', message: 'Search by title, author or keyword.',
-      );
-    }
+  return const SingleChildScrollView(
+    child: Column(
+      children: [
+        SizedBox(height: 32), 
+        Icon(Icons.menu_book, size: 64, color: Colors.grey),SizedBox(height: 12), 
+        Text('Find your next book'), SizedBox(height: 24), CategoryChips(),
+      ],
+    ),
+  );
+}
     if (_books.isEmpty) {
       return _MessageView(
         icon: Icons.search_off, title: 'No books found', message: 'Nothing matched "$_query". Try a different search or filter.',
@@ -343,10 +320,14 @@ class _SearchScreenState extends State<SearchScreen> {
         }
         if (i == _books.length + 1) return _buildFooter();
         return BookCard(
-          book: _books[i - 1],
-          onTap: () {
-          },
-        );
+  book: _books[i - 1],
+  onTap: () => Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => BookDetailsScreen(book: _books[i - 1]),
+    ),
+  ),
+);
       },
     );
   }
@@ -389,13 +370,7 @@ class _MessageView extends StatelessWidget {
   final String message;
   final String? buttonLabel;
   final VoidCallback? onPressed;
-  const _MessageView({
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.buttonLabel,
-    this.onPressed,
-  });
+  const _MessageView({ required this.icon, required this.title, required this.message, this.buttonLabel,this.onPressed,});
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -409,9 +384,7 @@ class _MessageView extends StatelessWidget {
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(message, textAlign: TextAlign.center),
-            if (buttonLabel != null) ...[
-              const SizedBox(height: 16), FilledButton(onPressed: onPressed, child: Text(buttonLabel!)),
-            ],
+            if (buttonLabel != null) ...[ const SizedBox(height: 16), FilledButton(onPressed: onPressed, child: Text(buttonLabel!)) ],
           ],
         ),
       ),
